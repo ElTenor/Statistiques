@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Plaintes par Opérateur</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 20px; background: #f5f5f5; }
+    #container { width: 90%; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    h1 { color: #FF6600; }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <h1>Plaintes par Opérateur</h1>
+    <select id="yearSelect"></select>
+    <canvas id="chart"></canvas>
+  </div>
+  <script>
+    // Fonction pour charger les données JSON
+    async function loadData() {
+      const response = await fetch('data.json');
+      const fullData = await response.json();
+      return fullData;
+    }
+
+    // Fonction pour initialiser et mettre à jour le graphique
+    function initChart(fullData) {
+      const years = [...new Set(fullData.map(d => d.annee))].sort();
+      const yearSelect = document.getElementById('yearSelect');
+      years.forEach(year => {
+        const option = document.createElement('option');
+        option.value = year;
+        option.textContent = year;
+        yearSelect.appendChild(option);
+      });
+
+      function updateChart(year) {
+        const filteredData = fullData.filter(d => d.annee === year && d.nombre !== null);
+        const ctx = document.getElementById('chart').getContext('2d');
+        new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: filteredData.map(d => d.operateur.replace(/^''/, '')),
+            datasets: [{
+              label: 'Nombre de plaintes',
+              data: filteredData.map(d => d.nombre),
+              backgroundColor: '#FF6600'
+            }]
+          },
+          options: {
+            responsive: true,
+            scales: {y: {beginAtZero: true}},
+            plugins: {
+              legend: {display: false},
+              title: {
+                display: true,
+                text: `Plaintes par Opérateur en ${year}`,
+                font: {size: 16}
+              }
+            }
+          }
+        });
+      }
+
+      yearSelect.addEventListener('change', (e) => updateChart(e.target.value));
+      updateChart(years[0]);
+    }
+
+    // Chargement des données et initialisation du graphique
+    loadData().then(initChart);
+  </script>
+</body>
+</html>
